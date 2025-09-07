@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Media Interaktif FINAL: Dunia Komputer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --text-color: #f8fafc;
+            --card-bg: rgba(30, 41, 59, 0.5);
+            --card-border: rgba(255, 255, 255, 0.1);
+            --primary-start: #4f46e5;
+            --primary-end: #7c3aed;
+            --sky: #38bdf8;
+            --violet: #a78bfa;
+            --emerald: #34d399;
+            --amber: #fbbf24;
+            --rose: #f43f5e;
+        }
+        body.light-mode {
+            --bg-color: #f1f5f9;
+            --text-color: #0f172a;
+            --card-bg: rgba(255, 255, 255, 0.8);
+            --card-border: rgba(0, 0, 0, 0.1);
+        }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: background-color 0.5s ease, color 0.5s ease;
+        }
+        body::before {
+            content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(45deg, var(--primary-start), var(--primary-end), var(--sky));
+            background-size: 400% 400%; animation: gradient-animation 15s ease infinite;
+            z-index: -1; opacity: 0.1;
+        }
+        @keyframes gradient-animation { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        .screen { display: none; animation: fadeIn 0.8s ease-in-out; }
+        .screen.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.98) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+        .btn-primary { background-image: linear-gradient(to right, var(--primary-start), var(--primary-end)); transition: all 0.3s ease; }
+        .btn-primary:hover { transform: translateY(-3px) scale(1.05); box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
+        .glass-card {
+            background: var(--card-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            border-radius: 1.25rem; border: 1px solid var(--card-border); transition: all 0.3s ease;
+        }
+        .glass-card:hover { transform: translateY(-5px); border-color: var(--sky); }
+        #splash-screen svg.computer-icon { animation: float 3s ease-in-out infinite; }
+        @keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-15px); } }
+        #progress-bar { transition: width 0.5s ease-out; }
+        #achievement-toast { transform: translateY(200%); transition: transform 0.5s ease-in-out; }
+        #achievement-toast.show { transform: translateY(0); }
+        .timeline-item::before {
+            content: ''; position: absolute; left: -2.375rem; top: 0.25rem; width: 1.25rem; height: 1.25rem;
+            background-color: var(--sky); border: 4px solid var(--bg-color); border-radius: 9999px; z-index: 10;
+        }
+        #info-modal.hidden { display: none; } #info-modal { animation: fadeIn 0.3s ease; }
+        #modal-content { animation: slideInUp 0.4s ease; }
+        @keyframes slideInUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .tab-btn { padding: 0.5rem 1.5rem; border-radius: 9999px; font-weight: 600; transition: all 0.3s ease; background: transparent; }
+        .tab-btn.active { background-color: var(--sky); color: white; }
+        .tab-content { display: none; animation: fadeIn 0.5s; } .tab-content.active { display: block; }
+        .draggable { cursor: grab; } .draggable:active { cursor: grabbing; opacity: 0.7; transform: scale(1.1); }
+        .drop-zone { border: 2px dashed #475569; transition: all 0.3s ease; }
+        .drop-zone.hovered { background-color: #1e293b; border-color: var(--sky); }
+        .quiz-option.correct { background-color: var(--emerald); } .quiz-option.incorrect { background-color: var(--rose); }
+    </style>
+</head>
+<body class="overflow-x-hidden">
+
+    <button id="theme-toggle" class="fixed top-4 right-4 z-50 p-2 rounded-full glass-card">
+        <svg id="theme-icon" class="w-6 h-6 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+    </button>
+    <div id="progress-tracker" class="fixed bottom-4 left-4 z-50 glass-card p-2 rounded-lg text-xs font-bold">
+        <span>Progress: </span><span id="progress-percent">0%</span>
+    </div>
+
+    <div id="app-container" class="min-h-screen w-full flex items-center justify-center p-4 relative">
+        <div id="splash-screen" class="screen active text-center w-full max-w-md">
+            <svg viewBox="0 0 24 24" fill="currentColor" class="computer-icon mx-auto mb-6 w-32 h-32 text-sky-400"><path d="M4 3C2.89543 3 2 3.89543 2 5V15C2 16.1046 2.89543 17 4 17H7V19H5V21H19V19H17V17H20C21.1046 17 22 16.1046 22 15V5C22 3.89543 21.1046 3 20 3H4ZM4 5H20V15H4V5Z" /></svg>
+            <h1 class="text-4xl md:text-5xl font-extrabold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-sky-400 to-violet-500">Dunia Komputer FINAL</h1>
+            <p class="text-slate-300 mb-8 text-lg">Eksplorasi Hardware & Software Modern</p>
+            <div id="progress-bar-container" class="w-full h-2 bg-slate-700 rounded-full overflow-hidden mb-8"><div id="progress-bar" class="h-full bg-sky-400" style="width: 0%;"></div></div>
+            <button id="start-btn" onclick="showScreen('main-menu')" class="btn-primary font-bold py-3 px-8 rounded-full text-xl shadow-lg hidden">Mulai Jelajah</button>
+        </div>
+
+        <div id="main-menu" class="screen w-full max-w-5xl">
+            <div class="glass-card p-3 mb-8 text-center text-sm"><span class="font-bold text-amber-400">Fakta Menarik: </span><span id="fun-fact"></span></div>
+            <h2 class="text-3xl font-bold text-center mb-8">Pilih Topik Untuk Dipelajari</h2>
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div onclick="showScreen('hardware-section')" class="glass-card p-6 text-center cursor-pointer group"><h3 class="text-2xl font-bold mb-2 text-sky-400 group-hover:text-white">Perangkat Keras</h3><p>Kenali komponen fisik pembangun komputer.</p></div>
+                <div onclick="showScreen('software-section')" class="glass-card p-6 text-center cursor-pointer group"><h3 class="text-2xl font-bold mb-2 text-violet-400 group-hover:text-white">Perangkat Lunak</h3><p>Jelajahi dunia program dan sistem operasi.</p></div>
+                <div onclick="showScreen('timeline-section')" class="glass-card p-6 text-center cursor-pointer group"><h3 class="text-2xl font-bold mb-2 text-emerald-400 group-hover:text-white">Sejarah Komputer</h3><p>Lacak evolusi mesin hitung dari masa ke masa.</p></div>
+                <div onclick="showScreen('game-section')" class="glass-card p-6 text-center cursor-pointer group"><h3 class="text-xl font-bold mb-2 text-amber-400 group-hover:text-white">Game: Rakit PC</h3><p>Seret & letakkan komponen pada motherboard.</p></div>
+                <div onclick="showScreen('game-drag-words-section')" class="glass-card p-6 text-center cursor-pointer group"><h3 class="text-xl font-bold mb-2 text-rose-400 group-hover:text-white">Game: Lengkapi Kalimat</h3><p>Uji pemahamanmu dengan mengisi kata.</p></div>
+                <div onclick="showScreen('quiz-section')" class="glass-card p-6 text-center cursor-pointer group"><h3 class="text-xl font-bold mb-2 text-fuchsia-400 group-hover:text-white">Kuis Pengetahuan</h3><p>Uji wawasanmu tentang dunia komputer.</p></div>
+            </div>
+        </div>
+        
+        <div id="hardware-section" class="screen w-full max-w-6xl"><button onclick="showScreen('main-menu')" class="btn-primary text-sm font-bold py-2 px-4 rounded-lg mb-6">&larr; Kembali</button><h2 class="text-3xl font-bold text-center mb-8">Perangkat Keras (Hardware)</h2><div id="hardware-cards" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"></div></div>
+        
+        <div id="software-section" class="screen w-full max-w-5xl">
+            <button onclick="showScreen('main-menu')" class="btn-primary text-sm font-bold py-2 px-4 rounded-lg mb-6">&larr; Kembali</button>
+            <h2 class="text-3xl font-bold text-center mb-8">Perangkat Lunak (Software)</h2>
+            <div id="software-tabs" class="flex justify-center mb-6 space-x-2 md:space-x-4"><button class="tab-btn active" onclick="showTab('system-sw', this)">Sistem</button><button class="tab-btn" onclick="showTab('app-sw', this)">Aplikasi</button></div>
+            <div id="system-sw" class="tab-content active grid md:grid-cols-2 gap-6"></div>
+            <div id="app-sw" class="tab-content grid md:grid-cols-2 gap-6"></div>
+        </div>
+        
+        <div id="timeline-section" class="screen w-full max-w-4xl"><button onclick="showScreen('main-menu')" class="btn-primary text-sm font-bold py-2 px-4 rounded-lg mb-6">&larr; Kembali</button><h2 class="text-3xl font-bold text-center mb-12">Linimasa Sejarah Komputer</h2><div id="timeline-container" class="relative border-l-2 border-sky-500 ml-10 p-4 space-y-12"></div></div>
+        
+        <div id="game-section" class="screen w-full max-w-6xl">
+            <button onclick="showScreen('main-menu');" class="btn-primary text-sm font-bold py-2 px-4 rounded-lg mb-6">&larr; Kembali</button>
+            <h2 class="text-3xl font-bold text-center mb-2">Game: Rakit Komputer Virtual</h2>
+            <p class="text-center text-slate-400 mb-6">Seret komponen dan letakkan di slot yang benar.</p>
+            <div class="flex flex-col md:flex-row gap-6">
+                <div id="component-tray" class="w-full md:w-1/3 glass-card p-4 grid grid-cols-2 gap-4"></div>
+                <div class="w-full md:w-2/3 glass-card p-4 relative h-[28rem] md:h-auto"><div id="drop-zones-container" class="relative w-full h-full grid grid-cols-2 grid-rows-2 gap-4 p-4"></div></div>
+            </div>
+            <div id="game-feedback" class="text-center mt-4 font-bold text-xl h-8"></div>
+        </div>
+        
+        <div id="game-drag-words-section" class="screen w-full max-w-4xl">
+            <button onclick="showScreen('main-menu');" class="btn-primary text-sm font-bold py-2 px-4 rounded-lg mb-6">&larr; Kembali</button>
+            <h2 class="text-3xl font-bold text-center mb-8">Game: Lengkapi Kalimat</h2>
+            <div id="dw-game-container" class="glass-card p-8"><div id="dw-sentence" class="text-xl md:text-2xl mb-8 text-center leading-loose"></div><div id="dw-word-bank" class="flex justify-center gap-4 flex-wrap"></div><div id="dw-feedback" class="text-center mt-6 font-bold text-lg h-6"></div></div>
+        </div>
+
+        <div id="quiz-section" class="screen w-full max-w-3xl">
+            <button onclick="showScreen('main-menu')" class="btn-primary text-sm font-bold py-2 px-4 rounded-lg mb-6">&larr; Kembali</button>
+            <div id="quiz-container" class="glass-card p-8">
+                <div id="question-container">
+                    <div class="flex justify-between items-center mb-4"><p class="text-sm text-slate-400" id="question-counter"></p><div id="quiz-timer" class="text-lg font-bold text-amber-400"></div></div>
+                    <h3 class="text-2xl font-bold mb-6" id="question-text"></h3>
+                    <div id="options-container" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+                </div>
+                <div id="quiz-result" class="hidden text-center"><h3 class="text-3xl font-bold mb-4">Kuis Selesai!</h3><p id="score-text" class="text-6xl font-extrabold text-amber-400 mb-8"></p><button onclick="startQuiz()" class="btn-primary font-bold py-3 px-6 rounded-lg">Coba Lagi</button></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="info-modal" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50" onclick="closeModal()"><div id="modal-content" class="glass-card max-w-2xl w-full p-6 md:p-8 relative" onclick="event.stopPropagation()"><button onclick="closeModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-3xl">&times;</button><h3 id="modal-title" class="text-2xl md:text-3xl font-bold mb-4 text-sky-400"></h3><div id="modal-svg-container" class="w-full h-40 md:h-48 flex items-center justify-center rounded-lg mb-4 bg-slate-800/50 p-2"></div><p id="modal-description" class="text-slate-300 mb-6"></p></div></div>
+    
+    <div id="achievement-toast" class="fixed bottom-10 right-10 z-50 glass-card p-4 flex items-center gap-4 rounded-xl shadow-lg"><div class="text-amber-400 text-3xl">🏆</div><div><h4 class="font-bold">Pencapaian Terbuka!</h4><p id="achievement-text" class="text-sm"></p></div></div>
+    
+    <script>
+    // --- DATA ---
+    const hardwareData = {
+        cpu: { name: 'CPU (Processor)', description: 'Otak komputer yang melakukan sebagian besar pemrosesan data dan instruksi.', svg: `<path d="M5,5V19H19V5H5M7,7H17V17H7V7M9,9V11H11V9H9M13,9V11H15V9H13M9,13V15H11V13H9M13,13V15H15V13H13Z" />` },
+        ram: { name: 'RAM (Memory)', description: 'Memori jangka pendek untuk menyimpan data aplikasi yang sedang berjalan. Data hilang saat listrik mati.', svg: `<path d="M4,18H20V16H4V18M4,15H20V13H4V15M4,12H20V10H4V12M4,9H20V7H4V9M2,20H22V5H2V20Z" />` },
+        storage: { name: 'Storage (SSD/HDD)', description: 'Penyimpanan jangka panjang untuk sistem operasi, aplikasi, dan file Anda.', svg: `<path d="M5,19A2,2 0 0,1 3,17V7A2,2 0 0,1 5,5H19A2,2 0 0,1 21,7V17A2,2 0 0,1 19,19H5M6,10H18V12H6V10Z" />` },
+        gpu: { name: 'GPU (VGA Card)', description: 'Memproses dan merender grafis untuk ditampilkan di monitor. Penting untuk gaming dan desain.', svg: `<path d="M9,2V4H15V2H9M11,12V7H13V12H11M7,2H17A2,2 0 0,1 19,4V16A2,2 0 0,1 17,18H7A2,2 0 0,1 5,16V4A2,2 0 0,1 7,2M7,20H17V22H7V20Z" />` },
+        motherboard: { name: 'Motherboard', description: 'Papan sirkuit utama yang menghubungkan semua komponen komputer agar dapat berkomunikasi.', svg: `<path d="M2,2H22V22H2V2M6,4V8H4V4H6M10,4V8H8V4H10M14,4V8H12V4H14M18,4V8H16V4H18M6,12V14H4V12H6M10,10V14H8V10H10M14,10V14H12V10H14M18,10V14H16V10H18M8,16V18H16V16H8Z" />` },
+        psu: { name: 'PSU (Power Supply)', description: 'Menyediakan daya listrik yang stabil untuk semua komponen di dalam komputer.', svg: `<path d="M4,3H20A2,2 0 0,1 22,5V19A2,2 0 0,1 20,21H4A2,2 0 0,1 2,19V5A2,2 0 0,1 4,3M18,13H15V16H13V13H10V11H13V8H15V11H18V13M5,11H8V13H5V11Z" />` }
+    };
+    const softwareData = {
+        system: [
+            { name: 'Sistem Operasi', description: 'Platform dasar yang mengelola hardware & software. Contoh: Windows, macOS, Linux, Android.'},
+            { name: 'Driver Perangkat', description: 'Penerjemah antara OS dan hardware spesifik seperti printer atau kartu grafis.'},
+            { name: 'Firmware', description: 'Software permanen yang tertanam di hardware, seperti BIOS pada motherboard.'},
+            { name: 'Utility', description: 'Program untuk pemeliharaan sistem. Contoh: Antivirus, Disk Defragmenter.'}
+        ],
+        application: [
+            { name: 'Web Browser', description: 'Aplikasi untuk mengakses dan menampilkan konten dari World Wide Web. Contoh: Chrome, Firefox.'},
+            { name: 'Office Suite', description: 'Kumpulan program untuk produktivitas kantor. Contoh: Microsoft Office, Google Workspace.'},
+            { name: 'Desain Grafis', description: 'Software untuk membuat dan mengedit gambar visual. Contoh: Photoshop, CorelDRAW.'},
+            { name: 'Game', description: 'Aplikasi yang dirancang untuk hiburan interaktif.'}
+        ]
+    };
+    const timelineData = [
+        { year: '1946', event: 'ENIAC', description: 'Komputer elektronik skala besar pertama, ENIAC, diresmikan. Beratnya 30 ton.' },
+        { year: '1971', event: 'Mikroprosesor Pertama', description: 'Intel merilis Intel 4004, membuka jalan bagi komputer pribadi (PC).' },
+        { year: '1981', event: 'IBM PC', description: 'IBM meluncurkan PC-nya, yang dengan cepat menjadi standar industri dan mempopulerkan komputasi personal.' },
+        { year: '1990', event: 'World Wide Web', description: 'Tim Berners-Lee mengembangkan WWW, mengubah komputer menjadi alat komunikasi global.' },
+        { year: '2007', event: 'Era Smartphone', description: 'Apple merilis iPhone, mempopulerkan komputasi mobile dan aplikasi modern.' }
+    ];
+    const quizData = [
+        { question: "Apa yang disebut sebagai 'otak' komputer?", options: ["RAM", "CPU", "GPU", "HDD"], answer: "CPU" },
+        { question: "Microsoft Windows dan macOS adalah contoh dari...", options: ["Perangkat Keras", "Aplikasi", "Sistem Operasi", "Driver"], answer: "Sistem Operasi" },
+        { question: "Komponen yang menghubungkan semua perangkat keras adalah...", options: ["PSU", "Motherboard", "Casing", "GPU"], answer: "Motherboard" },
+        { question: "Data di perangkat ini akan hilang saat komputer mati. Apakah ini?", options: ["SSD", "HDD", "RAM", "CPU"], answer: "RAM" },
+        { question: "Google Chrome dan Mozilla Firefox adalah contoh dari...", options: ["Web Browser", "Sistem Operasi", "Game Engine", "Antivirus"], answer: "Web Browser" }
+    ];
+    const funFacts = [ "Mouse komputer pertama dibuat dari kayu.", "Email pertama dikirim pada tahun 1971 oleh Ray Tomlinson.", "Lebih dari 5 miliar orang di dunia menggunakan internet.", "Kata 'bug' komputer berasal dari seekor ngengat asli yang ditemukan di komputer Harvard Mark II.", "Setiap menit, lebih dari 500 jam video diunggah ke YouTube." ];
+    const dragWordsData = [
+        { sentence: ["___", "adalah otak dari komputer."], answer: "CPU", options: ["RAM", "CPU", "GPU"] },
+        { sentence: ["Untuk menjelajah internet, Anda memerlukan", "___", "."], answer: "Browser", options: ["Antivirus", "Editor", "Browser"] },
+        { sentence: ["___", "menghubungkan semua komponen di dalam PC."], answer: "Motherboard", options: ["PSU", "Kabel", "Motherboard"] }
+    ];
+    const gameComponents = { cpu: { name: 'CPU' }, ram: { name: 'RAM' }, gpu: { name: 'GPU' }, storage: { name: 'Storage' } };
+
+    // --- STATE & SETUP ---
+    let visitedSections = new Set(), achievementsUnlocked = new Set();
+    let quizTimerInterval, currentQuestionIndex = 0, score = 0, droppedCount = 0, dwCurrentQuestion = 0;
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    
+    // --- CORE FUNCTIONS ---
+    function showScreen(screenId) {
+        playSound('click');
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(screenId).classList.add('active');
+        if (screenId !== 'splash-screen') visitedSections.add(screenId);
+        updateProgress(); checkAchievements();
+        if (screenId === 'main-menu') showFunFact();
+        if (screenId === 'quiz-section') startQuiz();
+        if (screenId === 'game-section') initGame();
+        if (screenId === 'game-drag-words-section') initDragWordsGame();
+    }
+    
+    function playSound(type) {
+        const sounds = {
+            click: {f:200,t:0.05,v:0.1}, success: {f:440,t:0.1,v:0.2}, error: {f:150,t:0.2,v:0.1,w:'square'}
+        };
+        if (!sounds[type]) return; let s = sounds[type];
+        const oscillator = audioContext.createOscillator(); const gainNode = audioContext.createGain();
+        oscillator.connect(gainNode); gainNode.connect(audioContext.destination);
+        oscillator.type = s.w || 'sine'; oscillator.frequency.value = s.f;
+        gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+        gainNode.gain.linearRampToValueAtTime(s.v, audioContext.currentTime + 0.01);
+        oscillator.start(audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.00001, audioContext.currentTime + s.t);
+        oscillator.stop(audioContext.currentTime + s.t);
+    }
+
+    function updateProgress() {
+        const totalSections = 6;
+        const completed = visitedSections.size;
+        const percent = Math.round((completed / totalSections) * 100);
+        document.getElementById('progress-percent').textContent = `${percent}%`;
+    }
+
+    function checkAchievements() {
+        if (visitedSections.size >= 3 && !achievementsUnlocked.has('curious')) { showAchievement('Rasa Ingin Tahu Tinggi!'); achievementsUnlocked.add('curious'); }
+        if (visitedSections.size === 6 && !achievementsUnlocked.has('explorer')) { showAchievement('Penjelajah Sejati!'); achievementsUnlocked.add('explorer'); }
+    }
+
+    function showAchievement(text) { playSound('success'); const t = document.getElementById('achievement-toast'); document.getElementById('achievement-text').textContent = text; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000); }
+    function showFunFact() { document.getElementById('fun-fact').textContent = funFacts[Math.floor(Math.random() * funFacts.length)]; }
+    function toggleTheme() { playSound('click'); document.body.classList.toggle('light-mode'); }
+    function showModal(data) { playSound('click'); document.getElementById('modal-title').innerText = data.name; document.getElementById('modal-description').innerText = data.description; document.getElementById('modal-svg-container').innerHTML = `<svg viewBox="0 0 24 24" class="w-24 h-24 md:w-32 md:h-32" fill="currentColor">${data.svg}</svg>`; document.getElementById('info-modal').classList.remove('hidden'); }
+    function closeModal() { document.getElementById('info-modal').classList.add('hidden'); }
+
+    // --- SECTION POPULATION ---
+    function populateHardware() {
+        const container = document.getElementById('hardware-cards'); container.innerHTML = '';
+        for (const key in hardwareData) {
+            const item = hardwareData[key];
+            const card = document.createElement('div');
+            card.className = 'glass-card p-4 text-center cursor-pointer flex flex-col items-center justify-center space-y-2';
+            card.onclick = () => showModal(item);
+            card.innerHTML = `<svg viewBox="0 0 24 24" class="w-12 h-12 md:w-16 md:h-16" fill="currentColor">${item.svg}</svg><h4 class="font-bold text-sm md:text-base">${item.name}</h4>`;
+            container.appendChild(card);
+        }
+    }
+
+    function populateSoftware() {
+        const sysContainer = document.getElementById('system-sw'); const appContainer = document.getElementById('app-sw');
+        sysContainer.innerHTML = ''; appContainer.innerHTML = '';
+        softwareData.system.forEach(item => { sysContainer.innerHTML += `<div class="glass-card p-5"> <h4 class="font-bold text-lg text-violet-400 mb-2">${item.name}</h4> <p class="text-sm">${item.description}</p> </div>`; });
+        softwareData.application.forEach(item => { appContainer.innerHTML += `<div class="glass-card p-5"> <h4 class="font-bold text-lg text-sky-400 mb-2">${item.name}</h4> <p class="text-sm">${item.description}</p> </div>`; });
+    }
+    
+    function showTab(tabId, btn) {
+        playSound('click');
+        document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+    }
+    
+    function populateTimeline() {
+        const container = document.getElementById('timeline-container'); container.innerHTML = '';
+        timelineData.forEach(item => {
+            container.innerHTML += `<div class="timeline-item relative pl-8"><h3 class="font-bold text-xl text-sky-400">${item.year} - ${item.event}</h3><p class="mt-2 text-slate-300">${item.description}</p></div>`;
+        });
+    }
+
+    // --- GAME: RAKIT PC ---
+    function initGame() {
+        const tray = document.getElementById('component-tray'); const zones = document.getElementById('drop-zones-container');
+        tray.innerHTML = ''; zones.innerHTML = ''; droppedCount = 0; document.getElementById('game-feedback').textContent = '';
+        const componentKeys = Object.keys(gameComponents).sort(() => Math.random() - 0.5);
+        componentKeys.forEach(key => {
+            const item = document.createElement('div'); item.id = `drag-${key}`; item.className = 'draggable glass-card p-2 flex flex-col items-center justify-center font-bold h-24'; item.draggable = true; item.innerHTML = `<svg viewBox="0 0 24 24" class="w-10 h-10 mb-1" fill="currentColor">${hardwareData[key].svg}</svg><span>${gameComponents[key].name}</span>`;
+            item.addEventListener('dragstart', e => e.dataTransfer.setData('text/plain', item.id)); tray.appendChild(item);
+            const zone = document.createElement('div'); zone.id = `drop-${key}`; zone.className = 'drop-zone rounded-lg flex items-center justify-center text-slate-400'; zone.dataset.target = `drag-${key}`; zone.textContent = `Letakkan ${gameComponents[key].name}`;
+            zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('hovered'); });
+            zone.addEventListener('dragleave', () => zone.classList.remove('hovered'));
+            zone.addEventListener('drop', e => { e.preventDefault(); zone.classList.remove('hovered'); const draggedId = e.dataTransfer.getData('text/plain'); if (zone.dataset.target === draggedId) { playSound('success'); zone.innerHTML = ''; zone.appendChild(document.getElementById(draggedId)); zone.classList.add('dropped'); document.getElementById(draggedId).draggable = false; droppedCount++; if (droppedCount === componentKeys.length) { document.getElementById('game-feedback').textContent = 'Selamat! PC Berhasil Dirakit!'; document.getElementById('game-feedback').style.color = 'var(--emerald)'; showAchievement('Teknisi Andal!'); achievementsUnlocked.add('tech'); }} else { playSound('error'); }}); zones.appendChild(zone);
+        });
+    }
+
+    // --- GAME: DRAG WORDS ---
+    function initDragWordsGame() { dwCurrentQuestion = 0; loadDragWordsQuestion(); }
+    function loadDragWordsQuestion() {
+        const game = dragWordsData[dwCurrentQuestion]; const sentenceContainer = document.getElementById('dw-sentence'); const wordBank = document.getElementById('dw-word-bank');
+        if (!game) { sentenceContainer.textContent = "Kamu Hebat!"; wordBank.innerHTML = ''; return; }
+        sentenceContainer.innerHTML = ''; game.sentence.forEach(part => { if (part === '___') { sentenceContainer.innerHTML += `<span id="dw-drop-zone" class="inline-block w-40 h-10 bg-slate-700/50 rounded-lg border-2 border-dashed border-slate-500 align-middle"></span>`; } else { sentenceContainer.append(document.createTextNode(part)); } });
+        wordBank.innerHTML = ''; const shuffledOptions = [...game.options].sort(() => Math.random() - 0.5);
+        shuffledOptions.forEach(opt => { const word = document.createElement('div'); word.className = 'draggable p-2 px-4 glass-card'; word.textContent = opt; word.draggable = true; word.id = `dw-drag-${opt}`; word.addEventListener('dragstart', e => e.dataTransfer.setData('text/plain', word.id)); wordBank.appendChild(word); });
+        const dropZone = document.getElementById('dw-drop-zone'); dropZone.addEventListener('dragover', e => e.preventDefault());
+        dropZone.addEventListener('drop', e => { e.preventDefault(); const draggedId = e.dataTransfer.getData('text/plain'); const draggedEl = document.getElementById(draggedId); const feedback = document.getElementById('dw-feedback'); if (draggedEl.textContent === game.answer) { playSound('success'); dropZone.innerHTML = ''; dropZone.appendChild(draggedEl); draggedEl.draggable = false; feedback.textContent = "Benar sekali!"; feedback.style.color = 'var(--emerald)'; setTimeout(() => { dwCurrentQuestion++; loadDragWordsQuestion(); feedback.textContent = ''; }, 1500); } else { playSound('error'); feedback.textContent = "Coba lagi!"; feedback.style.color = 'var(--rose)'; setTimeout(() => feedback.textContent = '', 1500); }});
+    }
+
+    // --- QUIZ ---
+    function startQuiz() {
+        currentQuestionIndex = 0; score = 0;
+        document.getElementById('quiz-result').classList.add('hidden');
+        document.getElementById('question-container').classList.remove('hidden');
+        loadQuestion();
+    }
+    function loadQuestion() {
+        clearInterval(quizTimerInterval);
+        if (currentQuestionIndex >= quizData.length) { showResults(); return; }
+        const question = quizData[currentQuestionIndex];
+        document.getElementById('question-counter').innerText = `Pertanyaan ${currentQuestionIndex + 1} dari ${quizData.length}`;
+        document.getElementById('question-text').innerText = question.question;
+        const optionsContainer = document.getElementById('options-container'); optionsContainer.innerHTML = '';
+        const shuffledOptions = [...question.options].sort(() => Math.random() - 0.5);
+        shuffledOptions.forEach(option => { const button = document.createElement('button'); button.className = 'quiz-option p-4 rounded-lg text-left bg-slate-700/50 hover:bg-slate-600/50 transition-colors'; button.innerText = option; button.onclick = () => selectAnswer(button, option, question.answer); optionsContainer.appendChild(button); });
+        let timeLeft = 15;
+        const timerEl = document.getElementById('quiz-timer'); timerEl.textContent = timeLeft;
+        quizTimerInterval = setInterval(() => { timeLeft--; timerEl.textContent = timeLeft; if (timeLeft <= 0) { clearInterval(quizTimerInterval); selectAnswer(null, '', question.answer); } }, 1000);
+    }
+    function selectAnswer(button, selected, correct) {
+        clearInterval(quizTimerInterval); playSound(selected === correct ? 'success' : 'error');
+        if (selected === correct) score++;
+        document.querySelectorAll('.quiz-option').forEach(opt => { opt.disabled = true; if (opt.innerText === correct) opt.classList.add('correct'); else if (opt.innerText === selected) opt.classList.add('incorrect'); });
+        setTimeout(() => { currentQuestionIndex++; loadQuestion(); }, 1500);
+    }
+    function showResults() {
+        document.getElementById('question-container').classList.add('hidden');
+        const resultDiv = document.getElementById('quiz-result'); resultDiv.classList.remove('hidden');
+        document.getElementById('score-text').innerText = `${score} / ${quizData.length}`;
+        if(score === quizData.length && !achievementsUnlocked.has('genius')) { showAchievement('Jenius Komputer!'); achievementsUnlocked.add('genius'); }
+    }
+    
+    // --- INITIALIZATION ---
+    window.onload = () => {
+        document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
+        populateHardware(); populateSoftware(); populateTimeline();
+        let width = 0; const bar = document.getElementById('progress-bar');
+        const interval = setInterval(() => {
+            if (width >= 100) { clearInterval(interval); document.getElementById('progress-bar-container').style.display = 'none'; document.getElementById('start-btn').classList.remove('hidden'); } 
+            else { width++; bar.style.width = width + '%'; }
+        }, 20);
+        showFunFact();
+    };
+    </script>
+</body>
+</html>
